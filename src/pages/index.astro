@@ -1,0 +1,362 @@
+---
+// Home
+import { Image } from "astro:assets";
+import Base from "../layouts/Base.astro";
+import draw from "../assets/draw.png";
+---
+
+<Base title="Its Fate!">
+    <section
+        data-snap
+        class="hero relative flex min-h-dvh flex-col items-center justify-center"
+    >
+        <div class="flex flex-col items-start">
+            <span class="reveal-wrap">
+                <h1 class="text-accent font-extrabold text-9xl -ml-2">
+                    Its{" "}
+                    <span class="fate-wrap">
+                        <span class="fate-base">Fate!</span>
+                        <span class="fate-overlay" aria-hidden="true">
+                            Fate!
+                        </span>
+                    </span>
+                </h1>
+                <span class="reveal-cover"></span>
+            </span>
+            <span class="reveal-wrap">
+                <span class="text-muted text-xl">Dev. Games. Life.</span>
+                <span class="reveal-cover-description"></span>
+            </span>
+            <span id="timezone" class="block w-full">
+                <span class="reveal-wrap">
+                    <span id="time" class="text-muted text-xl">
+                        GMT+8
+                    </span>
+                    <span class="reveal-cover-description"></span>
+                </span>
+            </span>
+        </div>
+        <div
+            id="scroll-hint"
+            class="scroll-hint absolute bottom-12 flex items-end gap-2 text-sm text-muted select-none cursor-pointer"
+        >
+            Dive in
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="size-4"
+            >
+                <path d="M12 5v14" />
+                <path d="m19 12-7 7-7-7" />
+            </svg>
+        </div>
+    </section>
+
+    <section
+        data-snap
+        class="flex min-h-[calc(100dvh-5rem)] flex-col items-center justify-center px-4"
+    >
+        <div class="flex max-w-3xl flex-col items-center gap-8 md:flex-row">
+            <Image
+                src={draw}
+                alt="Visual representation of me, drawn by me."
+                title="It's me. Why are you looking at the alt text?"
+                width={240}
+                height={245}
+                draggable="false"
+                class="shrink-0 select-none"
+            />
+            <div class="flex flex-col items-start gap-4">
+                <h3 class="text-2xl font-bold">
+                    Hello there! I{" "}
+                    <span class="italic underline decoration-1 underline-offset-1">
+                        am
+                    </span>{" "}
+                    Fate.
+                </h3>
+                <p class="text-lg text-foreground">
+                    Dev by trade, gaming on the side{" "}
+                    <span class="line-through text-muted">
+                        sometimes night owl
+                    </span>
+                    . I built this site to write about random things that happen
+                    in my life (occasionally): whatever on my mind, games,
+                    anything.
+                </p>
+                <p class="flex flex-col items-start gap-2">
+                    <a href="/posts" class="text-accent">
+                        Read the ramblings of a man →
+                    </a>
+                    <a href="/resume" class="text-accent">
+                        My resume's here if you're curious →
+                    </a>
+                </p>
+            </div>
+        </div>
+    </section>
+</Base>
+
+<script>
+    const sections = Array.from(
+        document.querySelectorAll<HTMLElement>("[data-snap]"),
+    );
+    let animating = false;
+
+    function getCurrentIndex() {
+        let closest = 0;
+        let minDistance = Infinity;
+        sections.forEach((section, i) => {
+            const distance = Math.abs(section.getBoundingClientRect().top);
+            if (distance < minDistance) {
+                minDistance = distance;
+                closest = i;
+            }
+        });
+        return closest;
+    }
+
+    function goTo(index: number) {
+        if (index < 0 || index >= sections.length || animating) return;
+        animating = true;
+        sections[index].scrollIntoView({ behavior: "smooth" });
+        setTimeout(() => {
+            animating = false;
+        }, 700);
+    }
+
+    document
+        .getElementById("scroll-hint")
+        ?.addEventListener("click", () => goTo(getCurrentIndex() + 1));
+
+    const reduceMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)",
+    ).matches;
+
+    const GMT_LABEL = "GMT+8";
+    const SCRAMBLE_CHARS = "!<>-_\\/[]{}=+*^?#";
+
+    function getGmt8TimeString() {
+        const now = new Date();
+        const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+        const gmt8 = new Date(utc + 8 * 3600000);
+        const hh = String(gmt8.getHours()).padStart(2, "0");
+        const mm = String(gmt8.getMinutes()).padStart(2, "0");
+        const ss = String(gmt8.getSeconds()).padStart(2, "0");
+        return `${hh}:${mm}:${ss}`;
+    }
+
+    let scrambleRAF: number | undefined;
+
+    function scrambleTo(
+        el: HTMLElement,
+        target: string,
+        duration = 400,
+        onDone?: () => void,
+    ) {
+        cancelAnimationFrame(scrambleRAF!);
+        const length = Math.max(el.textContent?.length ?? 0, target.length);
+        const totalFrames = Math.round(duration / 16);
+        let frame = 0;
+        function update() {
+            const progress = frame / totalFrames;
+            let output = "";
+            for (let i = 0; i < length; i++) {
+                if (i < target.length && progress > i / length) {
+                    output += target[i];
+                } else {
+                    output +=
+                        SCRAMBLE_CHARS[
+                            Math.floor(Math.random() * SCRAMBLE_CHARS.length)
+                        ];
+                }
+            }
+            el.textContent = output;
+            frame++;
+            if (frame <= totalFrames) {
+                scrambleRAF = requestAnimationFrame(update);
+            } else {
+                el.textContent = target;
+                onDone?.();
+            }
+        }
+        update();
+    }
+
+    const timezoneRow = document.getElementById("timezone");
+    const timeLabel = document.getElementById("time");
+    if (timezoneRow && timeLabel) {
+        let revertTimer: ReturnType<typeof setTimeout> | undefined;
+        let tickInterval: ReturnType<typeof setInterval> | undefined;
+
+        const startTicking = () => {
+            clearInterval(tickInterval);
+            tickInterval = setInterval(() => {
+                timeLabel.textContent = getGmt8TimeString();
+            }, 1000);
+        };
+
+        timezoneRow.addEventListener("mouseenter", () => {
+            clearTimeout(revertTimer);
+            clearInterval(tickInterval);
+            if (reduceMotion) {
+                timeLabel.textContent = getGmt8TimeString();
+                startTicking();
+            } else {
+                scrambleTo(timeLabel, getGmt8TimeString(), 400, startTicking);
+            }
+        });
+
+        timezoneRow.addEventListener("mouseleave", () => {
+            revertTimer = setTimeout(() => {
+                clearInterval(tickInterval);
+                if (reduceMotion) {
+                    timeLabel.textContent = GMT_LABEL;
+                } else {
+                    scrambleTo(timeLabel, GMT_LABEL);
+                }
+            }, 2000);
+        });
+    }
+
+    if (!reduceMotion) {
+        window.addEventListener(
+            "wheel",
+            (e) => {
+                if (animating) {
+                    e.preventDefault();
+                    return;
+                }
+                const target = getCurrentIndex() + (e.deltaY > 0 ? 1 : -1);
+                if (target < 0 || target >= sections.length) return;
+                e.preventDefault();
+                goTo(target);
+            },
+            { passive: false },
+        );
+
+        let touchStartY = 0;
+        window.addEventListener(
+            "touchstart",
+            (e) => {
+                touchStartY = e.touches[0].clientY;
+            },
+            { passive: true },
+        );
+        window.addEventListener(
+            "touchmove",
+            (e) => {
+                const diff = touchStartY - e.touches[0].clientY;
+                if (Math.abs(diff) > 10) {
+                    if (animating) {
+                        e.preventDefault();
+                        return;
+                    }
+                    const target = getCurrentIndex() + (diff > 0 ? 1 : -1);
+                    if (target < 0 || target >= sections.length) return;
+                    e.preventDefault();
+                    goTo(target);
+                }
+            },
+            { passive: false },
+        );
+
+        window.addEventListener("keydown", (e) => {
+            if (e.key === "ArrowDown" || e.key === "PageDown")
+                goTo(getCurrentIndex() + 1);
+            if (e.key === "ArrowUp" || e.key === "PageUp")
+                goTo(getCurrentIndex() - 1);
+        });
+    }
+</script>
+
+<style>
+    .reveal-wrap {
+        position: relative;
+        display: inline-block;
+        overflow: hidden;
+    }
+    .reveal-cover {
+        position: absolute;
+        inset: 0;
+        background: #e4e4e7;
+    }
+    .reveal-cover-description {
+        position: absolute;
+        inset: 0;
+        background: #09090b;
+    }
+    @media (prefers-reduced-motion: no-preference) {
+        .reveal-cover {
+            animation: reveal-slide 1s cubic-bezier(0.7, 0, 1, 1) forwards;
+            animation-delay: 0.2s;
+        }
+        .reveal-cover-description {
+            animation: reveal-slide 0.3s cubic-bezier(0.7, 0, 1, 1) forwards;
+            animation-delay: 1s;
+        }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .reveal-cover,
+        .reveal-cover-description {
+            transform: translateX(100%);
+        }
+    }
+    @keyframes reveal-slide {
+        to {
+            transform: translateX(100%);
+        }
+    }
+    .fate-wrap {
+        position: relative;
+        display: inline-block;
+    }
+    .fate-overlay {
+        position: absolute;
+        inset: 0;
+        background: var(--color-accent);
+        color: var(--color-background);
+        white-space: nowrap;
+        clip-path: inset(0 100% 0 0);
+    }
+    @media (prefers-reduced-motion: no-preference) {
+        .fate-overlay {
+            animation: fate-highlight-sweep 0.5s cubic-bezier(0.7, 0, 0.3, 1)
+                forwards;
+            animation-delay: 1.3s;
+        }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .fate-overlay {
+            clip-path: inset(0 0 0 0);
+        }
+    }
+    @keyframes fate-highlight-sweep {
+        to {
+            clip-path: inset(0 0 0 0);
+        }
+    }
+    .scroll-hint {
+        opacity: 0;
+    }
+    @media (prefers-reduced-motion: no-preference) {
+        .scroll-hint {
+            animation: scroll-hint-fade-in 0.4s ease-out forwards;
+            animation-delay: 1.5s;
+        }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .scroll-hint {
+            opacity: 1;
+        }
+    }
+    @keyframes scroll-hint-fade-in {
+        to {
+            opacity: 1;
+        }
+    }
+</style>

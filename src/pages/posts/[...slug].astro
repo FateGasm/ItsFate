@@ -1,0 +1,49 @@
+---
+// src/pages/posts/[...slug].astro
+import { getCollection, render } from "astro:content";
+import { Image } from "astro:assets";
+import Post from "../../layouts/Post.astro";
+
+export async function getStaticPaths() {
+    const all = (await getCollection("posts"))
+        .filter((p) => !p.data.draft || import.meta.env.DEV)
+        .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+
+    const published = all.filter((p) => !p.data.draft);
+
+    return all.map((post) => {
+        const i = published.indexOf(post);
+        return {
+            params: { slug: post.id },
+            props: {
+                post,
+                newer: i === -1 ? null : (published[i - 1] ?? null),
+                older: i === -1 ? null : (published[i + 1] ?? null),
+            },
+        };
+    });
+}
+
+const { post, newer, older } = Astro.props;
+const { Content, headings } = await render(post);
+---
+
+<Post
+    title={post.data.title}
+    date={post.data.date}
+>
+    {post.data.cover && (
+        <Image
+            src={post.data.cover}
+            alt={post.data.coverAlt ?? ""}
+            widths={[400, 800]}
+        />
+    )}
+
+    <Content />
+
+    <nav class="pager">
+        {older && <a href={`/posts/${older.id}`}>← {older.data.title}</a>}
+        {newer && <a href={`/posts/${newer.id}`}>{newer.data.title} →</a>}
+    </nav>
+</Post>

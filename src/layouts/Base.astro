@@ -1,0 +1,147 @@
+---
+// src/layouts/Base.astro
+import "../styles/global.css";
+const { title } = Astro.props;
+---
+
+<html lang="en" class="scroll-smooth">
+    <head>
+        <meta charset="utf-8" />
+        <title>{title}</title>
+    </head>
+    <body class="bg-background text-foreground flex min-h-dvh flex-col">
+        <main class="flex-1">
+            <slot />
+        </main>
+        <footer
+            id="site-footer"
+            class="border-t border-border px-4 h-20 text-sm text-muted flex flex-wrap items-center justify-between gap-4"
+        >
+            <span>&copy; {new Date().getFullYear()} ItsFate</span>
+            <nav class="flex gap-6">
+                <a href="mailto:andrewlow_22@hotmail.com">Email me?</a>
+            </nav>
+        </footer>
+    </body>
+</html>
+
+<script>
+    const reduceMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)",
+    ).matches;
+
+    document.querySelectorAll<HTMLAnchorElement>("a").forEach((link) => {
+        const text = link.textContent?.trim();
+        if (!text) return;
+        link.textContent = "";
+        link.classList.add("link-highlight-wrap");
+
+        const base = document.createElement("span");
+        base.textContent = text;
+
+        const overlay = document.createElement("span");
+        overlay.className = "link-highlight-overlay";
+        overlay.setAttribute("aria-hidden", "true");
+        overlay.textContent = text;
+
+        link.append(base, overlay);
+    });
+
+    if (!reduceMotion) {
+        const PARTICLE_COUNT = 3;
+        const PARTICLE_DISTANCE = 12;
+
+        document.addEventListener("click", (e) => {
+            const ripple = document.createElement("span");
+            ripple.className = "click-ripple";
+            ripple.style.left = `${e.clientX}px`;
+            ripple.style.top = `${e.clientY}px`;
+            document.body.appendChild(ripple);
+            ripple.addEventListener("animationend", () => ripple.remove());
+
+            for (let i = 0; i < PARTICLE_COUNT; i++) {
+                const angle = Math.PI + ((i + 0.5) / PARTICLE_COUNT) * Math.PI;
+                const dx = Math.cos(angle) * PARTICLE_DISTANCE;
+                const dy = Math.sin(angle) * PARTICLE_DISTANCE;
+                const particle = document.createElement("span");
+                particle.className = "click-ripple-particle";
+                particle.style.left = `${e.clientX + dx}px`;
+                particle.style.top = `${e.clientY + dy}px`;
+                document.body.appendChild(particle);
+                particle.addEventListener("animationend", () =>
+                    particle.remove(),
+                );
+            }
+        });
+    }
+</script>
+
+<style is:global>
+    .click-ripple {
+        position: fixed;
+        width: 16px;
+        height: 16px;
+        margin: -8px 0 0 -8px;
+        border: 1.5px solid var(--color-accent);
+        transform: rotate(45deg) scale(1);
+        opacity: 0.5;
+        pointer-events: none;
+        z-index: 9999;
+        animation: click-ripple-anim 0.5s ease-out forwards;
+    }
+    @keyframes click-ripple-anim {
+        to {
+            transform: rotate(45deg) scale(3);
+            opacity: 0;
+        }
+    }
+    .click-ripple-particle {
+        position: fixed;
+        width: 5px;
+        height: 5px;
+        margin: -2.5px 0 0 -2.5px;
+        background: var(--color-accent);
+        transform: rotate(45deg) scale(1);
+        opacity: 0.6;
+        pointer-events: none;
+        z-index: 9999;
+        animation: click-ripple-particle-anim 0.5s ease-out forwards;
+    }
+    @keyframes click-ripple-particle-anim {
+        to {
+            transform: rotate(45deg) scale(0.4);
+            opacity: 0;
+        }
+    }
+    ::selection {
+        background: var(--color-accent);
+        color: var(--color-background);
+    }
+    .link-highlight-wrap {
+        position: relative;
+        display: inline-block;
+    }
+    .link-highlight-overlay {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: -0.2em;
+        right: -0.2em;
+        padding: 0 0.2em;
+        background: var(--color-accent);
+        color: var(--color-background);
+        white-space: nowrap;
+        clip-path: inset(0 100% 0 0);
+        transition: clip-path 0.3s ease-out;
+        pointer-events: none;
+    }
+    .link-highlight-wrap:hover .link-highlight-overlay,
+    .link-highlight-wrap:focus-visible .link-highlight-overlay {
+        clip-path: inset(0 0 0 0);
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .link-highlight-overlay {
+            transition: none;
+        }
+    }
+</style>

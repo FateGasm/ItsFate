@@ -1,0 +1,26 @@
+---
+// src/layouts/Post.astro
+import Base from "../layouts/Base.astro";
+const { title, date } = Astro.props;
+---
+
+<Base title={`${title} | Its Fate!`}>
+    <article class="max-w-[65ch] mx-auto">
+        <h1 class="text-3xl md:text-4xl font-semibold tracking-tight text-foreground">
+            {title}
+        </h1>
+        <time
+            datetime={date.toISOString()}
+            class="block mt-2 text-sm font-normal text-muted"
+        >
+            {date.toLocaleDateString("en-GB", {
+                year: "2-digit",
+                month: "short",
+                day: "numeric",
+            })}
+        </time>
+        <div class="mt-8 font-body text-base font-normal leading-relaxed text-foreground">
+            <slot />
+        </div>
+    </article>
+</Base>
