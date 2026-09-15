@@ -1,13 +1,16 @@
 ---
 // src/pages/posts/[...slug].astro
 import { getCollection, render } from "astro:content";
-import { Image } from "astro:assets";
 import Post from "../../layouts/Post.astro";
 
 export async function getStaticPaths() {
     const all = (await getCollection("posts"))
         .filter((p) => !p.data.draft || import.meta.env.DEV)
-        .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+        .sort(
+        (a, b) =>
+            b.data.date.getTime() - a.data.date.getTime() ||
+            a.id.localeCompare(b.id),
+    );
 
     const published = all.filter((p) => !p.data.draft);
 
@@ -25,25 +28,28 @@ export async function getStaticPaths() {
 }
 
 const { post, newer, older } = Astro.props;
-const { Content, headings } = await render(post);
+const { Content } = await render(post);
 ---
 
 <Post
     title={post.data.title}
     date={post.data.date}
+    description={post.data.description}
 >
-    {post.data.cover && (
-        <Image
-            src={post.data.cover}
-            alt={post.data.coverAlt ?? ""}
-            widths={[400, 800]}
-        />
-    )}
-
     <Content />
 
-    <nav class="pager">
-        {older && <a href={`/posts/${older.id}`}>← {older.data.title}</a>}
-        {newer && <a href={`/posts/${newer.id}`}>{newer.data.title} →</a>}
+    <nav class="not-prose mt-12 flex justify-between gap-6 font-display text-sm">
+        {older && (
+            <a href={`/posts/${older.id}`} class="text-left">
+                <span class="block text-muted">← Previous</span>
+                {older.data.title}
+            </a>
+        )}
+        {newer && (
+            <a href={`/posts/${newer.id}`} class="ml-auto text-right">
+                <span class="block text-muted">Next →</span>
+                {newer.data.title}
+            </a>
+        )}
     </nav>
 </Post>

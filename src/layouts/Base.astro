@@ -1,23 +1,69 @@
 ---
 // src/layouts/Base.astro
 import "../styles/global.css";
-const { title } = Astro.props;
+import { ClientRouter } from "astro:transitions";
+const {
+    title,
+    description = "Dev by trade, gaming on the side. Random writings on web dev, games, and life.",
+} = Astro.props;
+const isHome = Astro.url.pathname === "/";
+const canonical = new URL(Astro.url.pathname, Astro.site);
+// TODO: add public/og.png, 1200x630 px (1.91:1), PNG or JPG, under 1MB
+const ogImage = new URL("/og.png", Astro.site);
 ---
 
 <html lang="en" class="scroll-smooth">
     <head>
         <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link
+            rel="preload"
+            href="/fonts/Satoshi-Bold.woff2"
+            as="font"
+            type="font/woff2"
+            crossorigin
+        />
         <title>{title}</title>
+        <meta name="description" content={description} />
+        <link rel="canonical" href={canonical} />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content={title} />
+        <meta property="og:description" content={description} />
+        <meta property="og:url" content={canonical} />
+        <meta property="og:image" content={ogImage} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <ClientRouter />
     </head>
     <body class="bg-background text-foreground flex min-h-dvh flex-col">
-        <main class="flex-1">
+        {!isHome && (
+            <header
+                id="site-header"
+                transition:name="site-header"
+                transition:animate="none"
+                class="bg-background border-b border-border px-4 h-14 text-sm flex items-center justify-between gap-4 sticky top-0 z-10"
+            >
+                <a href="/" class="font-semibold tracking-tight">
+                    ItsFate
+                </a>
+                <nav class="flex gap-6 text-muted">
+                    <a href="/posts">Ramblings</a>
+                </nav>
+            </header>
+        )}
+        <main class:list={["flex-1 flex flex-col", !isHome && "py-12"]}>
             <slot />
         </main>
         <footer
             id="site-footer"
-            class="border-t border-border px-4 h-20 text-sm text-muted flex flex-wrap items-center justify-between gap-4"
+            class="border-t border-border px-4 min-h-14 py-4 text-sm text-muted flex flex-wrap items-center justify-between gap-4"
         >
-            <span>&copy; {new Date().getFullYear()} ItsFate</span>
+            <span>
+                &copy; {new Date().getFullYear()} ItsFate | Built with{" "}
+                <a href="https://astro.build/" target="_blank" rel="noopener">
+                    Astro
+                </a>
+            </span>
             <nav class="flex gap-6">
                 <a href="mailto:andrewlow_22@hotmail.com">Email me?</a>
             </nav>
@@ -30,26 +76,35 @@ const { title } = Astro.props;
         "(prefers-reduced-motion: reduce)",
     ).matches;
 
-    document.querySelectorAll<HTMLAnchorElement>("a").forEach((link) => {
-        const text = link.textContent?.trim();
-        if (!text) return;
-        link.textContent = "";
-        link.classList.add("link-highlight-wrap");
+    // Loading bar while next page is fetched
+    document.addEventListener("astro:before-preparation", () =>
+        document.documentElement.classList.add("is-loading"),
+    );
+    document.addEventListener("astro:after-preparation", () =>
+        document.documentElement.classList.remove("is-loading"),
+    );
 
-        const base = document.createElement("span");
-        base.textContent = text;
+    // Re-run on every client-side navigation; skip links already wrapped
+    document.addEventListener("astro:page-load", () => {
+        document.querySelectorAll<HTMLAnchorElement>("a").forEach((link) => {
+            if (!link.textContent?.trim()) return;
+            if (link.classList.contains("link-highlight-wrap")) return;
+            link.classList.add("link-highlight-wrap");
 
-        const overlay = document.createElement("span");
-        overlay.className = "link-highlight-overlay";
-        overlay.setAttribute("aria-hidden", "true");
-        overlay.textContent = text;
+            const base = document.createElement("span");
+            base.append(...link.childNodes);
 
-        link.append(base, overlay);
+            const overlay = base.cloneNode(true) as HTMLSpanElement;
+            overlay.className = "link-highlight-overlay";
+            overlay.setAttribute("aria-hidden", "true");
+
+            link.append(base, overlay);
+        });
     });
 
     if (!reduceMotion) {
-        const PARTICLE_COUNT = 3;
-        const PARTICLE_DISTANCE = 12;
+        const PARTICLE_COUNT = 4;
+        const PARTICLE_DISTANCE = 16;
 
         document.addEventListener("click", (e) => {
             const ripple = document.createElement("span");
@@ -60,13 +115,15 @@ const { title } = Astro.props;
             ripple.addEventListener("animationend", () => ripple.remove());
 
             for (let i = 0; i < PARTICLE_COUNT; i++) {
-                const angle = Math.PI + ((i + 0.5) / PARTICLE_COUNT) * Math.PI;
+                const angle = (i / PARTICLE_COUNT) * 2 * Math.PI;
                 const dx = Math.cos(angle) * PARTICLE_DISTANCE;
                 const dy = Math.sin(angle) * PARTICLE_DISTANCE;
                 const particle = document.createElement("span");
                 particle.className = "click-ripple-particle";
-                particle.style.left = `${e.clientX + dx}px`;
-                particle.style.top = `${e.clientY + dy}px`;
+                particle.style.left = `${e.clientX}px`;
+                particle.style.top = `${e.clientY}px`;
+                particle.style.setProperty("--dx", `${dx}px`);
+                particle.style.setProperty("--dy", `${dy}px`);
                 document.body.appendChild(particle);
                 particle.addEventListener("animationend", () =>
                     particle.remove(),
@@ -77,6 +134,25 @@ const { title } = Astro.props;
 </script>
 
 <style is:global>
+    html.is-loading {
+        cursor: progress;
+    }
+    html.is-loading::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 2px;
+        width: 0;
+        background: var(--color-accent);
+        z-index: 10000;
+        animation: loading-bar 1.5s ease-out forwards;
+    }
+    @keyframes loading-bar {
+        to {
+            width: 90%;
+        }
+    }
     .click-ripple {
         position: fixed;
         width: 16px;
@@ -109,7 +185,7 @@ const { title } = Astro.props;
     }
     @keyframes click-ripple-particle-anim {
         to {
-            transform: rotate(45deg) scale(0.4);
+            transform: translate(var(--dx), var(--dy)) rotate(45deg) scale(0.4);
             opacity: 0;
         }
     }
@@ -120,6 +196,10 @@ const { title } = Astro.props;
     .link-highlight-wrap {
         position: relative;
         display: inline-block;
+    }
+    .link-highlight-overlay,
+    .link-highlight-overlay * {
+        color: var(--color-background);
     }
     .link-highlight-overlay {
         position: absolute;

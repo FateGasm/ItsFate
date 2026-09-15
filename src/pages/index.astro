@@ -12,7 +12,7 @@ import draw from "../assets/draw.png";
     >
         <div class="flex flex-col items-start">
             <span class="reveal-wrap">
-                <h1 class="text-accent font-extrabold text-9xl -ml-2">
+                <h1 class="text-accent font-extrabold text-6xl md:text-8xl lg:text-9xl -ml-1 lg:-ml-2">
                     Its{" "}
                     <span class="fate-wrap">
                         <span class="fate-base">Fate!</span>
@@ -24,7 +24,7 @@ import draw from "../assets/draw.png";
                 <span class="reveal-cover"></span>
             </span>
             <span class="reveal-wrap">
-                <span class="text-muted text-xl">Dev. Games. Life.</span>
+                <span class="text-muted text-xl">(Web)Dev. Games. Life.</span>
                 <span class="reveal-cover-description"></span>
             </span>
             <span id="timezone" class="block w-full">
@@ -72,13 +72,9 @@ import draw from "../assets/draw.png";
                 class="shrink-0 select-none"
             />
             <div class="flex flex-col items-start gap-4">
-                <h3 class="text-2xl font-bold">
-                    Hello there! I{" "}
-                    <span class="italic underline decoration-1 underline-offset-1">
-                        am
-                    </span>{" "}
-                    Fate.
-                </h3>
+                <h2 class="text-2xl font-bold">
+                    Hello there! I <span class="italic">am</span> Fate.
+                </h2>
                 <p class="text-lg text-foreground">
                     Dev by trade, gaming on the side{" "}
                     <span class="line-through text-muted">
@@ -102,176 +98,219 @@ import draw from "../assets/draw.png";
 </Base>
 
 <script>
-    const sections = Array.from(
-        document.querySelectorAll<HTMLElement>("[data-snap]"),
-    );
-    let animating = false;
-
-    function getCurrentIndex() {
-        let closest = 0;
-        let minDistance = Infinity;
-        sections.forEach((section, i) => {
-            const distance = Math.abs(section.getBoundingClientRect().top);
-            if (distance < minDistance) {
-                minDistance = distance;
-                closest = i;
-            }
+    // Home-only setup; re-run on client-side navigation, torn down on leave
+    document.addEventListener("astro:page-load", () => {
+        if (!document.querySelector("[data-snap]")) return;
+        const ac = new AbortController();
+        document.addEventListener("astro:before-swap", () => ac.abort(), {
+            once: true,
         });
-        return closest;
-    }
+        const opts = (o: AddEventListenerOptions = {}) => ({
+            ...o,
+            signal: ac.signal,
+        });
 
-    function goTo(index: number) {
-        if (index < 0 || index >= sections.length || animating) return;
-        animating = true;
-        sections[index].scrollIntoView({ behavior: "smooth" });
-        setTimeout(() => {
-            animating = false;
-        }, 700);
-    }
+        const sections = Array.from(
+            document.querySelectorAll<HTMLElement>("[data-snap]"),
+        );
+        let animating = false;
 
-    document
-        .getElementById("scroll-hint")
-        ?.addEventListener("click", () => goTo(getCurrentIndex() + 1));
+        function getCurrentIndex() {
+            let closest = 0;
+            let minDistance = Infinity;
+            sections.forEach((section, i) => {
+                const distance = Math.abs(section.getBoundingClientRect().top);
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    closest = i;
+                }
+            });
+            return closest;
+        }
 
-    const reduceMotion = window.matchMedia(
-        "(prefers-reduced-motion: reduce)",
-    ).matches;
+        function goTo(index: number) {
+            if (index < 0 || index >= sections.length || animating) return;
+            animating = true;
+            sections[index].scrollIntoView({ behavior: "smooth" });
+            setTimeout(() => {
+                animating = false;
+            }, 700);
+        }
 
-    const GMT_LABEL = "GMT+8";
-    const SCRAMBLE_CHARS = "!<>-_\\/[]{}=+*^?#";
+        // Fall back to native scroll when the target section overflows the viewport
+        const canSnapTo = (index: number) =>
+            index >= 0 &&
+            index < sections.length &&
+            sections[index].offsetHeight <= window.innerHeight + 1;
 
-    function getGmt8TimeString() {
-        const now = new Date();
-        const utc = now.getTime() + now.getTimezoneOffset() * 60000;
-        const gmt8 = new Date(utc + 8 * 3600000);
-        const hh = String(gmt8.getHours()).padStart(2, "0");
-        const mm = String(gmt8.getMinutes()).padStart(2, "0");
-        const ss = String(gmt8.getSeconds()).padStart(2, "0");
-        return `${hh}:${mm}:${ss}`;
-    }
+        document
+            .getElementById("scroll-hint")
+            ?.addEventListener("click", () => goTo(getCurrentIndex() + 1));
 
-    let scrambleRAF: number | undefined;
+        const reduceMotion = window.matchMedia(
+            "(prefers-reduced-motion: reduce)",
+        ).matches;
 
-    function scrambleTo(
-        el: HTMLElement,
-        target: string,
-        duration = 400,
-        onDone?: () => void,
-    ) {
-        cancelAnimationFrame(scrambleRAF!);
-        const length = Math.max(el.textContent?.length ?? 0, target.length);
-        const totalFrames = Math.round(duration / 16);
-        let frame = 0;
-        function update() {
-            const progress = frame / totalFrames;
-            let output = "";
-            for (let i = 0; i < length; i++) {
-                if (i < target.length && progress > i / length) {
-                    output += target[i];
+        const GMT_LABEL = "GMT+8";
+        const SCRAMBLE_CHARS = "!<>-_\\/[]{}=+*^?#";
+
+        function getGmt8TimeString() {
+            const now = new Date();
+            const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+            const gmt8 = new Date(utc + 8 * 3600000);
+            const hh = String(gmt8.getHours()).padStart(2, "0");
+            const mm = String(gmt8.getMinutes()).padStart(2, "0");
+            const ss = String(gmt8.getSeconds()).padStart(2, "0");
+            return `${hh}:${mm}:${ss}`;
+        }
+
+        let scrambleRAF: number | undefined;
+
+        function scrambleTo(
+            el: HTMLElement,
+            target: string,
+            duration = 400,
+            onDone?: () => void,
+        ) {
+            cancelAnimationFrame(scrambleRAF!);
+            const length = Math.max(el.textContent?.length ?? 0, target.length);
+            const totalFrames = Math.round(duration / 16);
+            let frame = 0;
+            function update() {
+                const progress = frame / totalFrames;
+                let output = "";
+                for (let i = 0; i < length; i++) {
+                    if (i < target.length && progress > i / length) {
+                        output += target[i];
+                    } else {
+                        output +=
+                            SCRAMBLE_CHARS[
+                                Math.floor(
+                                    Math.random() * SCRAMBLE_CHARS.length,
+                                )
+                            ];
+                    }
+                }
+                el.textContent = output;
+                frame++;
+                if (frame <= totalFrames) {
+                    scrambleRAF = requestAnimationFrame(update);
                 } else {
-                    output +=
-                        SCRAMBLE_CHARS[
-                            Math.floor(Math.random() * SCRAMBLE_CHARS.length)
-                        ];
+                    el.textContent = target;
+                    onDone?.();
                 }
             }
-            el.textContent = output;
-            frame++;
-            if (frame <= totalFrames) {
-                scrambleRAF = requestAnimationFrame(update);
-            } else {
-                el.textContent = target;
-                onDone?.();
-            }
+            update();
         }
-        update();
-    }
 
-    const timezoneRow = document.getElementById("timezone");
-    const timeLabel = document.getElementById("time");
-    if (timezoneRow && timeLabel) {
-        let revertTimer: ReturnType<typeof setTimeout> | undefined;
-        let tickInterval: ReturnType<typeof setInterval> | undefined;
+        const timezoneRow = document.getElementById("timezone");
+        const timeLabel = document.getElementById("time");
+        if (timezoneRow && timeLabel) {
+            let revertTimer: ReturnType<typeof setTimeout> | undefined;
+            let tickInterval: ReturnType<typeof setInterval> | undefined;
 
-        const startTicking = () => {
-            clearInterval(tickInterval);
-            tickInterval = setInterval(() => {
-                timeLabel.textContent = getGmt8TimeString();
-            }, 1000);
-        };
+            const startTicking = () => {
+                clearInterval(tickInterval);
+                tickInterval = setInterval(() => {
+                    timeLabel.textContent = getGmt8TimeString();
+                }, 1000);
+            };
 
-        timezoneRow.addEventListener("mouseenter", () => {
-            clearTimeout(revertTimer);
-            clearInterval(tickInterval);
-            if (reduceMotion) {
-                timeLabel.textContent = getGmt8TimeString();
-                startTicking();
-            } else {
-                scrambleTo(timeLabel, getGmt8TimeString(), 400, startTicking);
-            }
-        });
-
-        timezoneRow.addEventListener("mouseleave", () => {
-            revertTimer = setTimeout(() => {
+            const showTime = () => {
+                clearTimeout(revertTimer);
                 clearInterval(tickInterval);
                 if (reduceMotion) {
-                    timeLabel.textContent = GMT_LABEL;
+                    timeLabel.textContent = getGmt8TimeString();
+                    startTicking();
                 } else {
-                    scrambleTo(timeLabel, GMT_LABEL);
+                    scrambleTo(
+                        timeLabel,
+                        getGmt8TimeString(),
+                        400,
+                        startTicking,
+                    );
                 }
+            };
+
+            const scheduleRevert = () => {
+                revertTimer = setTimeout(() => {
+                    clearInterval(tickInterval);
+                    if (reduceMotion) {
+                        timeLabel.textContent = GMT_LABEL;
+                    } else {
+                        scrambleTo(timeLabel, GMT_LABEL);
+                    }
+                }, 2000);
+            };
+
+            timezoneRow.addEventListener("mouseenter", showTime);
+            timezoneRow.addEventListener("mouseleave", scheduleRevert);
+            ac.signal.addEventListener("abort", () => {
+                clearTimeout(revertTimer);
+                clearInterval(tickInterval);
+                cancelAnimationFrame(scrambleRAF!);
+            });
+
+            setTimeout(() => {
+                showTime();
+                scheduleRevert();
             }, 2000);
-        });
-    }
+        }
 
-    if (!reduceMotion) {
-        window.addEventListener(
-            "wheel",
-            (e) => {
-                if (animating) {
-                    e.preventDefault();
-                    return;
-                }
-                const target = getCurrentIndex() + (e.deltaY > 0 ? 1 : -1);
-                if (target < 0 || target >= sections.length) return;
-                e.preventDefault();
-                goTo(target);
-            },
-            { passive: false },
-        );
-
-        let touchStartY = 0;
-        window.addEventListener(
-            "touchstart",
-            (e) => {
-                touchStartY = e.touches[0].clientY;
-            },
-            { passive: true },
-        );
-        window.addEventListener(
-            "touchmove",
-            (e) => {
-                const diff = touchStartY - e.touches[0].clientY;
-                if (Math.abs(diff) > 10) {
+        if (!reduceMotion) {
+            window.addEventListener(
+                "wheel",
+                (e) => {
                     if (animating) {
                         e.preventDefault();
                         return;
                     }
-                    const target = getCurrentIndex() + (diff > 0 ? 1 : -1);
-                    if (target < 0 || target >= sections.length) return;
+                    const target = getCurrentIndex() + (e.deltaY > 0 ? 1 : -1);
+                    if (!canSnapTo(target)) return;
                     e.preventDefault();
                     goTo(target);
-                }
-            },
-            { passive: false },
-        );
+                },
+                opts({ passive: false }),
+            );
 
-        window.addEventListener("keydown", (e) => {
-            if (e.key === "ArrowDown" || e.key === "PageDown")
-                goTo(getCurrentIndex() + 1);
-            if (e.key === "ArrowUp" || e.key === "PageUp")
-                goTo(getCurrentIndex() - 1);
-        });
-    }
+            let touchStartY = 0;
+            window.addEventListener(
+                "touchstart",
+                (e) => {
+                    touchStartY = e.touches[0].clientY;
+                },
+                opts({ passive: true }),
+            );
+            window.addEventListener(
+                "touchmove",
+                (e) => {
+                    const diff = touchStartY - e.touches[0].clientY;
+                    if (Math.abs(diff) > 10) {
+                        if (animating) {
+                            e.preventDefault();
+                            return;
+                        }
+                        const target = getCurrentIndex() + (diff > 0 ? 1 : -1);
+                        if (!canSnapTo(target)) return;
+                        e.preventDefault();
+                        goTo(target);
+                    }
+                },
+                opts({ passive: false }),
+            );
+
+            window.addEventListener(
+                "keydown",
+                (e) => {
+                    if (e.key === "ArrowDown" || e.key === "PageDown")
+                        goTo(getCurrentIndex() + 1);
+                    if (e.key === "ArrowUp" || e.key === "PageUp")
+                        goTo(getCurrentIndex() - 1);
+                },
+                opts(),
+            );
+        }
+    });
 </script>
 
 <style>

@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 @font-face {
   font-family: "Satoshi";
@@ -18,6 +19,14 @@
   font-weight: 700;
   font-display: swap;
 }
+/* Satoshi arrows sit low; serve U+2190-21FF (arrows) from Source Serif 4 */
+@font-face {
+  font-family: "Arrows";
+  src: url("/fonts/SourceSerif4-Regular.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+  unicode-range: U+2190-21FF;
+}
 @font-face {
   font-family: "Source Serif 4";
   src: url("/fonts/SourceSerif4-Regular.woff2") format("woff2");
@@ -26,7 +35,7 @@
 }
 
 @theme {
-  --font-display: "Satoshi", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Arrows", "Satoshi", ui-sans-serif, system-ui, sans-serif;
   --font-body: "Source Serif 4", ui-serif, Georgia, serif;
   --color-background: #09090b;
   --color-surface: #18181b;
@@ -48,4 +57,19 @@ figcaption {
   font-size: 0.75rem;
   font-weight: 400;
   color: var(--color-muted);
+}
+
+/* Header enter/exit only when the other page has no header (:only-child).
+   Header-to-header keeps transition:animate="none". */
+::view-transition-new(site-header):only-child {
+  animation: header-slide-down 0.3s ease-out 0.18s both;
+}
+::view-transition-old(site-header):only-child {
+  animation: header-slide-up 0.3s ease-in both;
+}
+@keyframes header-slide-down {
+  from { transform: translateY(-100%); }
+}
+@keyframes header-slide-up {
+  to { transform: translateY(-100%); }
 }

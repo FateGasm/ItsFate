@@ -1,25 +1,29 @@
 ---
 // src/layouts/Post.astro
 import Base from "../layouts/Base.astro";
-const { title, date } = Astro.props;
+const { title, date, description } = Astro.props;
 ---
 
-<Base title={`${title} | Its Fate!`}>
-    <article class="max-w-[65ch] mx-auto">
+<Base title={`${title} | Its Fate!`} description={description}>
+    <article class="w-full max-w-[65ch] mx-auto pb-6">
+        <a href="/posts" class="inline-block mb-6 text-sm text-muted">
+            ← All Ramblings
+        </a>
         <h1 class="text-3xl md:text-4xl font-semibold tracking-tight text-foreground">
             {title}
         </h1>
+        {description && (
+            <p class="mt-3 text-lg font-normal leading-snug text-muted">
+                {description}
+            </p>
+        )}
         <time
             datetime={date.toISOString()}
             class="block mt-2 text-sm font-normal text-muted"
         >
-            {date.toLocaleDateString("en-GB", {
-                year: "2-digit",
-                month: "short",
-                day: "numeric",
-            })}
+            {`${date.toLocaleDateString("en-GB", { month: "short", timeZone: "UTC" })} ${date.getUTCDate()}, ${date.getUTCFullYear()}`}
         </time>
-        <div class="mt-8 font-body text-base font-normal leading-relaxed text-foreground">
+        <div class="mt-8 font-body prose prose-invert prose-zinc max-w-none prose-headings:font-display prose-a:text-accent prose-a:no-underline prose-a:font-normal">
             <slot />
         </div>
     </article>

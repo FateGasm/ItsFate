@@ -8,10 +8,8 @@ const posts = defineCollection({
   schema: ({ image }) => z.object({
     title: z.string(),
     date: z.date(),
-    tags: z.array(z.string()).default([]),
+    description: z.string().optional(),
     draft: z.boolean().default(false),
-    cover: image().optional(),
-    coverAlt: z.string().optional(),
   }),
 });
 
