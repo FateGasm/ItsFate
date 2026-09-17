@@ -1,0 +1,17 @@
+---
+import { Image } from "astro:assets";
+import Base from "../layouts/Base.astro";
+import notFound from "../assets/404.png";
+---
+
+<Base title="404 | Its Fate!" description="Page not found." noindex>
+    <section class="flex-1 flex flex-col w-full max-w-[65ch] mx-auto gap-6">
+        <h1 class="text-3xl md:text-4xl font-semibold tracking-tight text-foreground">
+            404 Not Found
+        </h1>
+        <Image src={notFound} alt="Page not found." class="w-full" loading="eager" />
+        <a href="/" class="self-start text-accent">
+            ← Back home
+        </a>
+    </section>
+</Base>
