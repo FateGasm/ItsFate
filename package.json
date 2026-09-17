@@ -21,6 +21,7 @@
     "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
+    "playwright": "^1.63.0",
     "typescript": "^7.0.2"
   }
 }
