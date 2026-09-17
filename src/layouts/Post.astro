@@ -23,7 +23,7 @@ const { title, date, description } = Astro.props;
         >
             {`${date.toLocaleDateString("en-GB", { month: "short", timeZone: "UTC" })} ${date.getUTCDate()}, ${date.getUTCFullYear()}`}
         </time>
-        <div class="mt-8 font-body prose prose-invert prose-zinc max-w-none prose-headings:font-display prose-a:text-accent prose-a:no-underline prose-a:font-normal">
+        <div class="mt-8 font-body prose prose-invert prose-zinc max-w-none prose-headings:font-display prose-a:text-accent prose-a:no-underline prose-a:font-normal prose-code:before:content-none prose-code:after:content-none">
             <slot />
         </div>
     </article>
