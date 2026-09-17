@@ -1,20 +1,48 @@
 // Full-page screenshots of each route at each width, plus an SEO audit and
 // link check piggybacked on the widest (desktop) pass. Writes index.html to
 // view screenshots side by side, SEO issues, and broken links.
-// Usage: dev server running, then `node playwright/shot.mjs`. Open playwright/shots/index.html.
+// Usage: dev server running, then `node playwright/analysis.mjs`. Open playwright/screenshots/index.html.
 import { chromium } from "playwright";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const out = join(dirname(fileURLToPath(import.meta.url)), "shots");
+const out = join(dirname(fileURLToPath(import.meta.url)), "screenshots");
 mkdirSync(out, { recursive: true });
 const base = process.env.URL ?? "http://localhost:4321";
-const pages = { home: "/", posts: "/posts", post: "/posts/helloworld" };
 const widths = [390, 640, 768, 834, 1024];
 const auditWidth = widths[widths.length - 1]; // reuse this pass for SEO + links
 
 const b = await chromium.launch();
+
+// Discover routes: BFS same-origin <a href> from "/". Only linked pages are found,
+// which matches what a visitor (and a crawler) can reach.
+const pages = {};
+{
+    const ctx = await b.newContext();
+    const p = await ctx.newPage();
+    const queue = ["/"];
+    const seen = new Set(queue);
+    while (queue.length) {
+        const path = queue.shift();
+        pages[path === "/" ? "home" : path.replace(/^\/|\/$/g, "").replace(/\//g, "-")] = path;
+        await p.goto(base + path, { waitUntil: "domcontentloaded" });
+        const hrefs = await p.$$eval("a[href]", (as) => as.map((a) => a.href));
+        for (const h of hrefs) {
+            const u = new URL(h);
+            if (u.origin !== new URL(base).origin) continue;
+            const clean = u.pathname.replace(/\/$/, "") || "/";
+            if (/\.\w+$/.test(clean)) continue; // files (resume.pdf), not pages
+            if (!seen.has(clean)) {
+                seen.add(clean);
+                queue.push(clean);
+            }
+        }
+    }
+    await ctx.close();
+    console.log("routes:", Object.values(pages).join(" "));
+}
+
 const seoResults = [];
 const allLinks = new Map(); // url -> Set of page names it appeared on
 
@@ -184,7 +212,8 @@ tr.pass td:last-child{color:var(--ok)}
 ul{margin:0;padding-left:18px}
 </style>
 <h1>ItsFate Viewport Check</h1>
-<p>${new Date().toLocaleString()} · ${base}. Half scale, scroll inside a frame for the rest. Frames under 700px ran with touch emulation. SEO audit and link check ran at ${auditWidth}px.</p>
+<p>${new Date().toLocaleString()} · ${base}. </p>
+<p>Half scale, scroll inside a frame for the rest. Frames under 700px ran with touch emulation. SEO audit and link check ran at ${auditWidth}px.</p>
 ${Object.entries(pages).map(([n, p]) => strip(n, p)).join("")}
 
 <h2>SEO Audit</h2>
