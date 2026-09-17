@@ -4,7 +4,11 @@ import "../styles/global.css";
 import { ClientRouter } from "astro:transitions";
 import { Image } from "astro:assets";
 import glasses from "../assets/glasses.png";
-const { title, description = "(Web)Dev. Games. Life.", noindex = false } = Astro.props;
+const {
+    title,
+    description = "(Web)Dev. Games. Life.",
+    noindex = false,
+} = Astro.props;
 const isHome = Astro.url.pathname === "/";
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const ogImage = new URL("/og.png", Astro.site);
@@ -75,7 +79,9 @@ const ogImage = new URL("/og.png", Astro.site);
                 </a>
             </span>
             <nav class="flex gap-6">
-                <a href="mailto:andrewlow_22@hotmail.com">Email me?</a>
+                <a href="mailto:andrewlow_22@hotmail.com?subject=Your page is broken lol">
+                    Issues with the page? Let me know!
+                </a>
             </nav>
         </footer>
     </body>
