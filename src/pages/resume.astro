@@ -1,0 +1,41 @@
+---
+import { readFileSync } from "node:fs";
+import Base from "../layouts/Base.astro";
+
+const pdf = "/resume.pdf";
+
+// ModDate lives as plain text in the PDF's Info dictionary. Build-time read,
+// so the date tracks the file automatically; hidden if the exporter omits it.
+// ponytail: regex on raw bytes; breaks if a future exporter compresses the Info dict (use pdfjs-dist then)
+const m = readFileSync("public" + pdf, "latin1").match(
+    /\/ModDate\s*\(D:(\d{4})(\d{2})(\d{2})/,
+);
+const updated = m && new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+---
+
+<Base title="Resume | Its Fate!" description="My resume, for the curious." noindex>
+    <section class="flex-1 flex flex-col w-full max-w-[65ch] mx-auto gap-6">
+        <div class="flex flex-wrap items-baseline justify-between gap-4">
+            <h1 class="text-3xl md:text-4xl font-semibold tracking-tight text-foreground">
+                Resume
+            </h1>
+            <a href={pdf} download="Andrew Low - Resume.pdf" class="text-accent">
+                Download PDF →
+            </a>
+        </div>
+        {updated && (
+            <time datetime={updated.toISOString()} class="-mt-3 text-lg text-muted">
+                {`Last updated ${updated.toLocaleDateString("en-GB", { month: "short", timeZone: "UTC" })} ${updated.getUTCDate()}, ${updated.getUTCFullYear()}`}
+            </time>
+        )}
+
+        <!-- Vendored Mozilla pdf.js viewer (public/pdfjs, Apache-2.0). Browsers'
+             native PDF handling is inconsistent (Android Chrome downloads,
+             iOS shows page 1); this gives inline view + pinch zoom everywhere. -->
+        <iframe
+            src={`/pdfjs/web/viewer.html?file=${pdf}#zoom=page-width&pagemode=none`}
+            title="Resume"
+            class="flex-1 min-h-[80dvh] w-full border border-border"
+        ></iframe>
+    </section>
+</Base>
