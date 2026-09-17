@@ -38,7 +38,7 @@ const { Content } = await render(post);
 >
     <Content />
 
-    <nav class="not-prose mt-12 flex justify-between gap-6 font-display text-sm">
+    <nav class="not-prose mt-12 flex flex-col items-start sm:flex-row justify-between gap-6 font-display text-sm">
         {older && (
             <a href={`/posts/${older.id}`} class="text-left">
                 <span class="block text-muted">← Previous</span>
@@ -46,7 +46,7 @@ const { Content } = await render(post);
             </a>
         )}
         {newer && (
-            <a href={`/posts/${newer.id}`} class="ml-auto text-right">
+            <a href={`/posts/${newer.id}`} class="sm:ml-auto sm:text-right">
                 <span class="block text-muted">Next →</span>
                 {newer.data.title}
             </a>

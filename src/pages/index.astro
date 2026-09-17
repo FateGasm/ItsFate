@@ -8,11 +8,11 @@ import draw from "../assets/draw.png";
 <Base title="Its Fate!">
     <section
         data-snap
-        class="hero relative flex min-h-dvh flex-col items-center justify-center"
+        class="hero relative flex min-h-dvh flex-col items-center justify-center px-4"
     >
         <div class="flex flex-col items-start">
             <span class="reveal-wrap">
-                <h1 class="text-accent font-extrabold text-6xl md:text-8xl lg:text-9xl -ml-1 lg:-ml-2">
+                <h1 class="text-accent font-extrabold text-6xl sm:text-7xl md:text-8xl lg:text-9xl -ml-1 lg:-ml-2">
                     Its{" "}
                     <span class="fate-wrap">
                         <span class="fate-base">Fate!</span>
@@ -59,7 +59,7 @@ import draw from "../assets/draw.png";
 
     <section
         data-snap
-        class="flex min-h-[calc(100dvh-5rem)] flex-col items-center justify-center px-4"
+        class="flex min-h-[calc(100dvh-5rem)] flex-col items-center justify-center px-4 sm:px-8"
     >
         <div class="flex max-w-3xl flex-col items-center gap-8 md:flex-row">
             <Image
@@ -137,11 +137,12 @@ import draw from "../assets/draw.png";
             }, 700);
         }
 
-        // Fall back to native scroll when the target section overflows the viewport
-        const canSnapTo = (index: number) =>
-            index >= 0 &&
-            index < sections.length &&
-            sections[index].offsetHeight <= window.innerHeight + 1;
+        // Snap only when leaving `from` at its edge; inside a tall section, native scroll
+        const canSnap = (from: number, to: number) => {
+            if (to < 0 || to >= sections.length) return false;
+            const { top, bottom } = sections[from].getBoundingClientRect();
+            return to > from ? bottom <= window.innerHeight + 1 : top >= -1;
+        };
 
         document
             .getElementById("scroll-hint")
@@ -265,19 +266,25 @@ import draw from "../assets/draw.png";
                         e.preventDefault();
                         return;
                     }
-                    const target = getCurrentIndex() + (e.deltaY > 0 ? 1 : -1);
-                    if (!canSnapTo(target)) return;
+                    const cur = getCurrentIndex();
+                    const target = cur + (e.deltaY > 0 ? 1 : -1);
+                    if (!canSnap(cur, target)) return;
                     e.preventDefault();
                     goTo(target);
                 },
                 opts({ passive: false }),
             );
 
+            // Decide on the first move: prevent the whole gesture when snapping,
+            // else hand it to native scroll. Later preventDefault calls are ignored
+            // once the browser has started scrolling.
             let touchStartY = 0;
+            let touchMode: "snap" | "native" | "done" | null = null;
             window.addEventListener(
                 "touchstart",
                 (e) => {
                     touchStartY = e.touches[0].clientY;
+                    touchMode = null;
                 },
                 opts({ passive: true }),
             );
@@ -285,15 +292,18 @@ import draw from "../assets/draw.png";
                 "touchmove",
                 (e) => {
                     const diff = touchStartY - e.touches[0].clientY;
-                    if (Math.abs(diff) > 10) {
-                        if (animating) {
-                            e.preventDefault();
-                            return;
-                        }
-                        const target = getCurrentIndex() + (diff > 0 ? 1 : -1);
-                        if (!canSnapTo(target)) return;
-                        e.preventDefault();
-                        goTo(target);
+                    if (touchMode === null && diff !== 0) {
+                        const cur = getCurrentIndex();
+                        touchMode = canSnap(cur, cur + (diff > 0 ? 1 : -1))
+                            ? "snap"
+                            : "native";
+                    }
+                    if (touchMode === "native") return;
+                    e.preventDefault();
+                    if (touchMode === "snap" && Math.abs(diff) > 10) {
+                        const cur = getCurrentIndex();
+                        goTo(cur + (diff > 0 ? 1 : -1));
+                        touchMode = "done";
                     }
                 },
                 opts({ passive: false }),
@@ -342,12 +352,16 @@ import draw from "../assets/draw.png";
     @media (prefers-reduced-motion: reduce) {
         .reveal-cover,
         .reveal-cover-description {
-            transform: translateX(100%);
+            display: none;
         }
     }
     @keyframes reveal-slide {
+        99% {
+            visibility: visible;
+        }
         to {
             transform: translateX(100%);
+            visibility: hidden;
         }
     }
     .fate-wrap {
