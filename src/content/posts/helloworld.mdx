@@ -1,8 +1,55 @@
 ---
-title: "The birth of a site"
+title: "\"Let there be light\" and there was light"
 date: 2026-09-14
-description: "A starter post for a start of the site."
+description: "hELLo_WOrlD!?"
 draft: false
 ---
 
 Damn. Here we are.
+
+What started off as an idea finally came to life. There were so many drafted ideas I had in mind over the years. From using the basic CRA (`create-react-app`) ~~RIP CRA~~ to using Next.js and even the thought of doing a CMS with [Strapi](https://strapi.io/) to manage the blog content. *To think I even considered a CMS lmao. For something as small as this?*
+Well, in my defense I heard about Strapi from a colleague and thought it was a neat idea. But it was definitely overkill for something this small.
+
+Still, the idea of this site remained an idea and zero progress was made, outside of a couple of deleted local repos that never saw the light of day. That was until I became unemployed, and that idea started floating in my head yet again.
+
+***
+So, sitting down to start, first question: **"what stack?"**
+First thing I did was explore hosting options. Vercel came to mind initially, and with the free tier, it looked pretty neat at first. Bunch of built-in features designed around Next.js (well *obviously* since they created it) but I felt like I didn't need to use Next.js for this project, even though it was the one I was familiar with. 
+A blog like this? Static site, no question. I don't need SSR, I don't need API routes, I just need a simple static site.
+Still, Next stayed on the table while I looked around. 
+
+Then I found out about Cloudflare Pages: free for static sites, use any framework you want, deploying is just a link to the GitHub repo (well technically Vercel has a GitHub integration for deploying too). It's perfect for my situation! Zero servers needed? That's reduced cost for me!
+
+Next up: framework. Coming from a JavaScript background, I was looking for something familiar. Something JavaScript-based or JavaScript-like to reduce the entry barrier. I'd stumbled across Hugo before since [The Balance](https://www.thebalanceffxiv.com/) uses it, but their setup had two separate repos, one for the theme and one for the content. I didn't look into Hugo further; that two-repo setup kind of steered me away. I wanted something more straightforward, a single repo for whatever I do.
+
+Astro, *huh. Well, let's have some looksies.* Component model that I'm used to, built-in markdown support, file-based routing (some traces of Next here), and I can still use JavaScript components if I need to. \*stamp\* Sold!
+
+***
+<figure>
+```sh
+$ npm create astro@latest
+```
+<figcaption>Surely this is not going to end up in the bin again... right?</figcaption>
+</figure>
+And off we go.
+
+Things I had in mind: home page, blogs. The resume page somehow snuck in there. Had a colour scheme in mind when I started off, but colours alone don't fix a text-only site. That would turn people away *(I know I would)*. Images are hard to get though, as much as I would like to use random anime girl #225, I don't think I can handle a copyright strike flying my way.
+
+> Fine, I'll do it myself.
+
+Opened up the notes app on my phone, went into drawing mode, and that's where the funny-looking stickman on the home page came from. Definitely not the best work out there, but *hey it's my own creation*.
+The "branding" was rough though. I could use my online alias <span class="spoiler" tabindex="0">(FateGasm)</span>, but *ehhh* let's try something else. Something close to it and straightforward enough. ***It's a me! Mario!*** That ended up being the inspiration for the site name. "It's Fate" does have a nice ring to it, and it sorta fits the vibe I'm going for.
+
+***
+A week (and more) down the line and I have something I'm happy with. Astro exploration on pause for now. Cleaned up a couple more things, git pushed, and *oh wait I'm missing a post to commemorate the site* so uh yeah here I am. 
+
+Plans ahead? Might write some posts about random things that happened to me. Maybe about my trip. Maybe about a con. Maybe about a game I beat ~~or struggled to beat~~. Maybe maybe maybe. Nothing in particular yet, still in job-hunting mode. But for now we'll see how it goes. 
+
+じゃね～
+
+<figure>
+<blockquote>
+It is my ordeal, you could say. To test myself, to better myself, to fell ever greater foes.
+</blockquote>
+<figcaption>— Iron Jar Alexander</figcaption>
+</figure>
